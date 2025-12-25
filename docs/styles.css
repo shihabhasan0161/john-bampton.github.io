@@ -211,6 +211,17 @@ h1 {
   box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
+.growth-indicator {
+  margin-top: 8px;
+  padding: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #27ae60; /* Green for positive growth */
+  background-color: #e9f7ef;
+  border-radius: 6px;
+  border: 1px solid #a7d7c5;
+}
+
 .filters-buttons {
   display: flex;
   gap: 10px;

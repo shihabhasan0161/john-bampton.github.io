@@ -232,30 +232,34 @@ def fetch_user_detail_with_retry(login: str, max_retries: int = 5) -> Dict[str, 
 
 def compute_follower_growth(login: str, current_followers: Any, previous_users: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     """
-    Trending feature: compute the previous follower count and growth percentage
-    returns { followers_previous: int | None, followers_growth_pct: float | None }
+    Trending feature: compute follower growth data, including snapshot timestamp.
     """
-    user = previous_users.get(login, {})
-    prev_followers = user.get("followers")
-    prev_snapshot_at = user.get("followers_snapshot_at")
+    prev_user_data = previous_users.get(login, {})
+    prev_followers = prev_user_data.get("followers")
+    prev_snapshot_at = prev_user_data.get("followers_snapshot_at")
 
+    # If no valid previous data, initialize snapshot time and return no growth.
     if not isinstance(prev_followers, int) or not isinstance(prev_snapshot_at, int):
         return {
             "followers_previous": None,
             "followers_growth_pct": None,
+            "followers_snapshot_at": int(time.time()),
         }
 
-    # weekly followers threshold
+    # If it's not yet time to calculate new growth, return old data to preserve it.
     if time.time() - prev_snapshot_at < WEEK_SECONDS:
         return {
-            "followers_previous": None,
-            "followers_growth_pct": None,
+            "followers_previous": prev_followers,
+            "followers_growth_pct": prev_user_data.get("followers_growth_pct"),
+            "followers_snapshot_at": prev_snapshot_at,
         }
 
+    # Time to calculate new growth.
     if not isinstance(current_followers, int) or prev_followers <= 0:
         return {
             "followers_previous": prev_followers,
             "followers_growth_pct": None,
+            "followers_snapshot_at": int(time.time()),
         }
 
     growth_pct = ((current_followers - prev_followers) / prev_followers) * 100
@@ -263,6 +267,7 @@ def compute_follower_growth(login: str, current_followers: Any, previous_users: 
     return {
         "followers_previous": prev_followers,
         "followers_growth_pct": round(growth_pct, 2),
+        "followers_snapshot_at": int(time.time()),
     }
 
 
@@ -276,7 +281,6 @@ def enrich_user_with_details(user: Dict[str, Any], idx: int, total: int, previou
     sponsorship = fetch_sponsorship_info(user["login"])
 
     user["followers"] = detail.get("followers", "N/A")
-    user["followers_snapshot_at"] = int(time.time())
     user["following"] = detail.get("following", "N/A")
     user["location"] = detail.get("location", "")
     user["name"] = detail.get("name")
