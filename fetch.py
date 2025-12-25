@@ -28,18 +28,20 @@ MAX_EXTRA_PAGES = 2
 WEEK_SECONDS = 7 * 24 * 60 * 60 # for trending feature
 
 def load_previous_users(path: str = "./docs/users.json") -> Dict[str, Dict[str, Any]]:
-    """
-    trending feature -> load previous users.json and index by login
-
-    to calcute the follower growth
+    """Load previous user data from a JSON file and index it by login.
+    This is used to calculate follower growth for the trending feature.
     """
     if not os.path.exists(path):
         return {}
     try:
         with open(path, "r", encoding="utf-8") as f:
             users = json.load(f)
-        return {u.get("login"): u for u in users if "login" in u}
-    except Exception:
+        if not isinstance(users, list):
+            logger.warning(f"Data in {path} is not a list, returning empty dict.")
+            return {}
+        return {u["login"]: u for u in users if isinstance(u, dict) and "login" in u}
+    except (IOError, json.JSONDecodeError) as e:
+        logger.warning(f"Failed to load or parse previous users from {path}: {e}")
         return {}
 
 
